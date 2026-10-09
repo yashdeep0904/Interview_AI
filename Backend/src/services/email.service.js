@@ -1,33 +1,26 @@
 const nodemailer = require("nodemailer");
 
-/**
- * Creates a Gmail SMTP transporter explicitly configured to bypass cloud network blocks
- */
 const createTransporter = () => {
     return nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: 465, // Explicitly force SSL port 465 instead of relying on 'service' defaults
-        secure: true,
+        port: 465,
+        secure: true, // true for 465, false for other ports
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
         },
         tls: {
-            rejectUnauthorized: false // Prevents Render SSL proxy handshake failures
+            rejectUnauthorized: false
         },
-        // Increased timeouts to 20 seconds for Render's slow free-tier cold starts
-        connectionTimeout: 20000, 
-        greetingTimeout: 20000,
-        socketTimeout: 20000
+        family: 4, // CRITICAL: Forces IPv4. Fixes ETIMEDOUT on Render free tier.
+        connectionTimeout: 15000,
+        socketTimeout: 15000
     });
 };
 
-/**
- * Sends OTP verification email
- */
 async function sendOTPEmail(toEmail, otp, name) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        throw new Error("EMAIL_USER or EMAIL_PASS environment variables are missing on server.");
+        throw new Error("Missing EMAIL_USER or EMAIL_PASS in Render Environment Variables.");
     }
 
     const transporter = createTransporter();
@@ -37,7 +30,7 @@ async function sendOTPEmail(toEmail, otp, name) {
         to: toEmail,
         subject: `${otp} is your HiredMind verification code`,
         html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
                 <h2 style="color: #0f172a; margin-top: 0; font-size: 22px;">Hired<span style="color: #10b981;">Mind</span></h2>
                 <p style="color: #334155; font-size: 15px; line-height: 1.5;">Hi ${name || 'there'},</p>
                 <p style="color: #334155; font-size: 15px; line-height: 1.5;">Use the following 6-digit verification code to complete your signup:</p>

@@ -47,14 +47,15 @@ const registerUserController = async (req, res) => {
         // 3. Generate 6-digit OTP
         const otp = generateOTP();
 
-        // 4. Send Email via Nodemailer with DEV BYPASS
+        // 4. Send Email via Nodemailer
         try {
             await sendOTPEmail(normalizedEmail, otp, name.trim());
         } catch (emailError) {
-            // Dev Bypass: Log the error and OTP, but do not crash the request
-            console.error("⚠️ EMAIL DELIVERY BLOCKED BY RENDER/GOOGLE.");
-            console.error(`✅ DEV BYPASS: Your OTP code for ${normalizedEmail} is: [ ${otp} ]`);
-            console.error("Original Error:", emailError.message);
+            console.error("Email Delivery Failed:", emailError.message);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to send verification email. Please try again."
+            });
         }
 
         // 5. Store temporary signup record in OTP DB (Overwrites old OTP if present)
@@ -69,7 +70,7 @@ const registerUserController = async (req, res) => {
         return res.status(200).json({
             success: true,
             requiresVerification: true,
-            message: "Verification code sent to your email (or check server logs)."
+            message: "Verification code sent to your email."
         });
 
     } catch (error) {
@@ -88,7 +89,6 @@ const registerUserController = async (req, res) => {
  */
 async function verifyEmailController(req, res) {
     try {
-        // FIX: Destructure 'otp' to match what frontend auth.api.js is sending
         const { email, otp } = req.body;
 
         if (!email || !otp) {
