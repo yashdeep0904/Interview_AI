@@ -44,7 +44,7 @@ const registerUserController = async (req, res) => {
             });
         }
 
-        // 3. Generate 6-digit OTP
+        // 3. Generate 6-digit OTP 
         const otp = generateOTP();
 
         // 4. Send Email via Nodemailer
@@ -52,6 +52,8 @@ const registerUserController = async (req, res) => {
             await sendOTPEmail(normalizedEmail, otp, name.trim());
         } catch (emailError) {
             console.error("Email Delivery Failed:", emailError.message);
+            console.error("⚠️ RENDER BLOCKED EMAIL DELIVERY.");
+            console.error(`✅ DEV BYPASS: Your OTP code for ${normalizedEmail} is: [ ${otp} ]`);
             return res.status(500).json({
                 success: false,
                 message: "Failed to send verification email. Please try again."
