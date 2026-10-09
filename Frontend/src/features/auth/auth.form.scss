@@ -1,0 +1,288 @@
+// --- Variables (Matched to Home Page) ---
+$bg-color: #f8fafc;
+$text-main: #0f172a;
+$text-muted: #64748b;
+$primary: #10b981;
+$primary-alt: #14b8a6;
+$border-color: #e2e8f0;
+
+// Home Page Shadows
+$shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 10px 20px -8px rgba(0, 0, 0, 0.05); 
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: system-ui, -apple-system, sans-serif;
+    
+    // Base simple background color you liked
+    background-color: $bg-color;
+    
+    // Animation 1: Subtle moving dot grid
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 32px 32px;
+    animation: panGrid 20s linear infinite;
+    
+    position: relative;
+    overflow: hidden;
+
+    // Animation 2: Soft, floating ambient lights behind the card
+    &::before, &::after {
+        content: '';
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: 0;
+        opacity: 0.6;
+        animation: floatAmbient 12s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+
+    &::before {
+        background: #ffffff; // Pure white light
+        top: -150px;
+        left: -150px;
+    }
+
+    &::after {
+        background: #e2e8f0; // Soft slate shadow-light
+        bottom: -150px;
+        right: -150px;
+        animation-delay: -6s;
+    }
+}
+
+// Solid White Card (Matches the Interview Workspace Card)
+.form-container {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(255, 255, 255, 0.95); 
+    backdrop-filter: blur(10px); // Blends nicely with the floating lights
+    padding: 3rem;
+    border-radius: 24px;
+    box-shadow: $shadow-lg;
+    border: 1px solid $border-color;
+    position: relative;
+    z-index: 10;
+
+    .brand-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: $text-main; 
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.95rem;
+            box-shadow: $shadow-sm;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: $text-main;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+    }
+
+    h1 {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: $text-main;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .form-subtitle {
+        text-align: center;
+        color: $text-muted;
+        font-size: 0.95rem;
+        margin-bottom: 2.5rem;
+        line-height: 1.5;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: $text-main;
+    }
+
+    input {
+        padding: 0.9rem 1.2rem;
+        border: 1px solid $border-color;
+        background: #f8fafc;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        color: $text-main;
+        transition: all 0.2s ease;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+
+        &::placeholder {
+            color: #94a3b8;
+        }
+
+        &:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: $primary; 
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+    }
+}
+
+// Special styling for OTP Input
+.otp-group {
+    align-items: center;
+    margin-bottom: 1rem;
+
+    .otp-input {
+        font-size: 2.25rem;
+        letter-spacing: 0.8rem;
+        text-align: center;
+        font-weight: 800;
+        padding: 1rem;
+        width: 100%;
+        max-width: 280px;
+        background: #f8fafc;
+        color: $text-main; 
+        border-radius: 12px;
+        border: 1px solid $border-color;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+
+        &:focus {
+            background: #ffffff;
+            border-color: $primary;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+    }
+}
+
+// Error Banner
+.error-banner {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #b45309;
+    font-size: 0.85rem;
+    font-weight: 600;
+    animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+// Premium HiredMind Brand Button
+.primary-button {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, $primary, $primary-alt);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0.5rem;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        background: linear-gradient(135deg, #059669, #0d9488);
+    }
+    
+    &:active:not(:disabled) {
+        transform: translateY(1px);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.95rem;
+    color: $text-muted;
+
+    a {
+        color: $primary; 
+        font-weight: 800;
+        text-decoration: none;
+        transition: color 0.2s;
+
+        &:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+    }
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: $primary;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0;
+
+    &:hover { text-decoration: underline; }
+}
+
+// --- Background Animations ---
+
+@keyframes panGrid {
+    0% { background-position: 0px 0px; }
+    100% { background-position: 32px 32px; }
+}
+
+@keyframes floatAmbient {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(30px, 20px) scale(1.05);
+    }
+    100% {
+        transform: translate(-20px, -30px) scale(0.95);
+    }
+}
