@@ -15,45 +15,48 @@ const app = express()
 // 1. Establish Database Connection
 connectToDB()
 
+// 2. Define Allowed Origins (Local Dev + Render Deployed Frontend)
 const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    process.env.CLIENT_URL,
-    "https://interview-ai-client-1mwd.onrender.com"
-].filter(Boolean); // Filter out undefined if FRONTEND_URL isn't set
+    "https://interview-ai-client-1mwd.onrender.com",
+    process.env.CLIENT_URL
+].filter(Boolean)
 
-// 2. Global Middlewares
-app.use(express.json())
-app.use(cookieParser())
+// 3. CORS Middleware Configuration (Handles preflight OPTIONS requests automatically)
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like Postman or mobile apps) or matching allowed origins
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
         } else {
-            callback(new Error("CORS policy error: Origin not allowed"));
+            return callback(new Error(`CORS Policy Violation: Origin ${origin} not allowed`));
         }
     },
-    credentials: true
-}));
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+}))
 
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
-  }
+// 4. Global Body Parsers
+app.use(express.json())
+app.use(cookieParser())
 
-  app.get("/", (req, res) => {
+// 5. Health Check Route
+app.get("/", (req, res) => {
     res.status(200).json({
         status: "success",
         message: "HiredMind API is live and operational!"
     })
 })
 
-// 3. API Routes
+// 6. API Routes
 app.use("/api/auth", authRouter)
 app.use("/api/interview", interviewRouter)
 
-// 4. Start Server
+// 7. Start Server
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
+    console.log(`Server running on port ${PORT}`)
 })
