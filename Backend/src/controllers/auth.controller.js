@@ -21,52 +21,66 @@ const COOKIE_OPTIONS = {
  * @description Stores pending user in temporary OTP collection and sends email verification code
  * @access Public
  */
-async function registerUserController(req, res) {
+const registerUserController = async (req, res) => {
     try {
-        const { name, email, password } = req.body
+        const { name, email, password } = req.body;
 
+        // 1. Validate required fields
         if (!name || !email || !password) {
-            return res.status(400).json({ message: "Please provide name, email and password" })
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide name, email, and password." 
+            });
         }
 
-        // 1. Check if user is already registered in the main database
-        const isUserAlreadyExists = await userModel.findOne({ email })
-        if (isUserAlreadyExists) {
-            return res.status(400).json({ message: "Account already exists with this email address" })
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // 2. Check if user already exists in primary collection
+        const existingUser = await userModel.findOne({ email: normalizedEmail });
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "An account with this email already exists." 
+            });
         }
 
-        // 2. Hash password and generate OTP code
-        const hash = await bcrypt.hash(password, 10)
-        const otp = generateOTP()
-
-        // 3. Upsert into temporary OTP collection (Auto-expires after 10 mins)
-        await otpModel.findOneAndUpdate(
-            { email },
-            { name, email, password: hash, otp },
-            { upsert: true, new: true }
-        )
+        // 3. Generate 6-digit OTP
+        const otp = generateOTP();
 
         // 4. Send Email via Nodemailer
         try {
-            await sendOTPEmail(email, otp, name)
+            await sendOTPEmail(normalizedEmail, otp, name.trim());
         } catch (emailError) {
-            console.error("Nodemailer Delivery Error:", emailError)
-            await otpModel.findOneAndDelete({ email }) // Clean up temporary record if email fails
-            return res.status(500).json({ 
-                message: "Failed to send verification email. Please check server configuration." 
-            })
+            console.error("CRITICAL: Email service failed ->", emailError);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to send verification email. Please check server configuration."
+            });
         }
 
-        res.status(201).json({
-            message: "Registration initiated. Please check your email for the verification code.",
-            requiresVerification: true 
-        })
+        // 5. Store temporary signup record in OTP DB (Overwrites old OTP if present)
+        await otpModel.deleteMany({ email: normalizedEmail });
+        await otpModel.create({ 
+            email: normalizedEmail, 
+            otp,
+            name: name.trim(),
+            password 
+        });
+
+        return res.status(200).json({
+            success: true,
+            requiresVerification: true,
+            message: "Verification code sent to your email."
+        });
 
     } catch (error) {
-        console.error("Registration Error:", error)
-        res.status(500).json({ message: "Internal server error during registration." })
+        console.error("Register Controller Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Internal server error during registration." 
+        });
     }
-}
+};
 
 /**
  * @name verifyEmailController
@@ -75,21 +89,32 @@ async function registerUserController(req, res) {
  */
 async function verifyEmailController(req, res) {
     try {
-        const { email, code } = req.body
+        const { email, code } = req.body;
 
         if (!email || !code) {
-            return res.status(400).json({ message: "Email and verification code are required" })
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email and verification code are required" 
+            });
         }
+
+        const normalizedEmail = email.toLowerCase().trim();
 
         // 1. Find pending record in temporary OTP collection
-        const pendingUser = await otpModel.findOne({ email })
+        const pendingUser = await otpModel.findOne({ email: normalizedEmail });
 
         if (!pendingUser) {
-            return res.status(400).json({ message: "OTP code has expired or is invalid. Please register again." })
+            return res.status(400).json({ 
+                success: false, 
+                message: "OTP code has expired or is invalid. Please register again." 
+            });
         }
 
-        if (pendingUser.otp !== code) {
-            return res.status(400).json({ message: "Invalid verification code" })
+        if (pendingUser.otp !== code.toString().trim()) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid verification code" 
+            });
         }
 
         // 2. Officially register user in main MongoDB collection
@@ -97,31 +122,35 @@ async function verifyEmailController(req, res) {
             name: pendingUser.name,
             email: pendingUser.email,
             password: pendingUser.password
-        })
+        });
 
         // 3. Remove temporary OTP record
-        await otpModel.findOneAndDelete({ email })
+        await otpModel.deleteOne({ email: normalizedEmail });
 
         // 4. Generate JWT session token
         const token = jwt.sign(
             { id: user._id, name: user.name },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
-        )
+        );
 
-        res.cookie("token", token, COOKIE_OPTIONS)
+        res.cookie("token", token, COOKIE_OPTIONS);
 
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
             message: "Email verified successfully.",
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email
             }
-        })
+        });
     } catch (error) {
-        console.error("Verification Error:", error)
-        res.status(500).json({ message: "Internal server error during verification." })
+        console.error("Verification Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Internal server error during verification." 
+        });
     }
 }
 
@@ -132,43 +161,57 @@ async function verifyEmailController(req, res) {
  */
 async function loginUserController(req, res) {
     try {
-        const { email, password } = req.body
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ message: "Please provide email and password" })
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide email and password" 
+            });
         }
 
-        const user = await userModel.findOne({ email })
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await userModel.findOne({ email: normalizedEmail });
 
         if (!user) {
-            return res.status(400).json({ message: "Invalid email or password" })
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid email or password" 
+            });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password)
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid email or password" })
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid email or password" 
+            });
         }
 
         const token = jwt.sign(
             { id: user._id, name: user.name },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
-        )
+        );
 
-        res.cookie("token", token, COOKIE_OPTIONS)
+        res.cookie("token", token, COOKIE_OPTIONS);
 
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
             message: "User logged in successfully.",
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email
             }
-        })
+        });
     } catch (error) {
-        console.error("Login Error:", error)
-        res.status(500).json({ message: "Internal server error during login." })
+        console.error("Login Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Internal server error during login." 
+        });
     }
 }
 
@@ -179,20 +222,24 @@ async function loginUserController(req, res) {
  */
 async function logoutUserController(req, res) {
     try {
-        const token = req.cookies.token
+        const token = req.cookies.token;
 
         if (token) {
-            await tokenBlacklistModel.create({ token })
+            await tokenBlacklistModel.create({ token });
         }
 
-        res.clearCookie("token", COOKIE_OPTIONS)
+        res.clearCookie("token", COOKIE_OPTIONS);
 
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
             message: "User logged out successfully"
-        })
+        });
     } catch (error) {
-        console.error("Logout Error:", error)
-        res.status(500).json({ message: "Internal server error during logout." })
+        console.error("Logout Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Internal server error during logout." 
+        });
     }
 }
 
@@ -203,23 +250,30 @@ async function logoutUserController(req, res) {
  */
 async function getMeController(req, res) {
     try {
-        const user = await userModel.findById(req.user.id)
+        const user = await userModel.findById(req.user.id);
 
         if (!user) {
-            return res.status(404).json({ message: "User not found" })
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found" 
+            });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
             message: "User details fetched successfully",
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email
             }
-        })
+        });
     } catch (error) {
-        console.error("GetMe Error:", error)
-        res.status(500).json({ message: "Internal server error." })
+        console.error("GetMe Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Internal server error." 
+        });
     }
 }
 

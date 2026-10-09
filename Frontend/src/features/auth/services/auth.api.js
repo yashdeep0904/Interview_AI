@@ -1,53 +1,66 @@
-import axios from "axios"
+import axios from "axios";
 
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000",
-    withCredentials: true
-})
-
-export async function register({ name, email, password }) {
-    try {
-        // Note: Using 'name' instead of 'username' to match the UI
-        const response = await api.post('/api/auth/register', { name, email, password })
-        return response.data
-    } catch (err) {
-        throw err.response?.data || { message: "Registration failed. Please try again." }
+// Base API Configuration
+const API = axios.create({
+    baseURL: "https://interview-ai-server-a5fr.onrender.com/api" || "https://localhost:5173",
+    withCredentials: true, // Enables cookie handling for auth sessions
+    headers: {
+        "Content-Type": "application/json"
     }
-}
+});
 
-export async function verifyEmail({ email, code }) {
+// 1. Register User API
+export const register = async (formData) => {
     try {
-        const response = await api.post('/api/auth/verify-email', { email, code })
-        return response.data
-    } catch (err) {
-        throw err.response?.data || { message: "Invalid or expired verification code." }
+        const response = await API.post("/auth/register", formData);
+        return response.data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Server error during registration."
+        );
     }
-}
+};
 
-export async function login({ email, password }) {
+// 2. Verify Email OTP API
+export const verifyEmail = async ({ email, code }) => {
     try {
-        const response = await api.post("/api/auth/login", { email, password })
-        return response.data
-    } catch (err) {
-        throw err.response?.data || { message: "Incorrect email or password." }
+        const response = await API.post("/auth/verify-otp", { email, otp: code });
+        return response.data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Invalid or expired verification code."
+        );
     }
-}
+};
 
-export async function logout() {
+// 3. Login API
+export const login = async (credentials) => {
     try {
-        const response = await api.get("/api/auth/logout")
-        return response.data
-    } catch (err) {
-        console.error("Logout error:", err)
+        const response = await API.post("/auth/login", credentials);
+        return response.data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.message || "Invalid email or password."
+        );
     }
-}
+};
 
-export async function getMe() {
+// 4. Get Current Auth User
+export const getMe = async () => {
     try {
-        const response = await api.get("/api/auth/get-me")
-        return response.data
-    } catch (err) {
-        // If unauthorized, just return null (don't throw a visible error)
-        return null
+        const response = await API.get("/auth/get-me");
+        return response.data;
+    } catch (error) {
+        return null;
     }
-}
+};
+
+// 5. Logout API
+export const logout = async () => {
+    try {
+        const response = await API.post("/auth/logout");
+        return response.data;
+    } catch (error) {
+        throw new Error("Failed to log out.");
+    }
+};
