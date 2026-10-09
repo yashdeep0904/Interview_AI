@@ -15,13 +15,27 @@ const app = express()
 // 1. Establish Database Connection
 connectToDB()
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    process.env.CLIENT_URL,
+    "https://interview-ai-client-1mwd.onrender.com"
+].filter(Boolean); // Filter out undefined if FRONTEND_URL isn't set
+
 // 2. Global Middlewares
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like Postman or mobile apps) or matching allowed origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("CORS policy error: Origin not allowed"));
+        }
+    },
     credentials: true
-}))
+}));
 
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();

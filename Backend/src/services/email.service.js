@@ -1,21 +1,25 @@
-const nodemailer = require("nodemailer")
+const nodemailer = require("nodemailer");
 
-// Configure the email transport using environment variables
+// Explicit SMTP settings for cloud environments like Render
 const transporter = nodemailer.createTransport({
-    service: "gmail", // You can change this if using SendGrid, AWS SES, etc.
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // Uses SSL on port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
-})
+});
 
 /**
  * Sends an OTP verification email to the user
- * @param {string} toEmail - The recipient's email address
- * @param {string} otp - The 6-digit OTP code
- * @param {string} name - The user's name
  */
 async function sendOTPEmail(toEmail, otp, name) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.error("EMAIL_USER or EMAIL_PASS environment variables are missing!");
+        throw new Error("Missing email credentials in server environment variables.");
+    }
+
     const mailOptions = {
         from: `"HiredMind AI" <${process.env.EMAIL_USER}>`,
         to: toEmail,
@@ -37,15 +41,16 @@ async function sendOTPEmail(toEmail, otp, name) {
                 <p style="color: #94a3b8; font-size: 12px; text-align: center;">&copy; ${new Date().getFullYear()} HiredMind. All rights reserved.</p>
             </div>
         `
-    }
+    };
 
     try {
-        await transporter.sendMail(mailOptions)
-        console.log(`OTP email sent successfully to ${toEmail}`)
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`OTP email sent successfully to ${toEmail}: ${info.messageId}`);
+        return info;
     } catch (error) {
-        console.error("Error sending OTP email:", error)
-        throw new Error("Could not send verification email. Please try again.")
+        console.error("Nodemailer SMTP Error:", error);
+        throw new Error(`Email delivery failed: ${error.message}`);
     }
 }
 
-module.exports = { sendOTPEmail }
+module.exports = { sendOTPEmail };
