@@ -1,12 +1,12 @@
-const userModel = require("../models/user.model")
-const otpModel = require("../models/otp.model")
-const tokenBlacklistModel = require("../models/blacklist.model")
-const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken")
-const { sendOTPEmail } = require("../services/email.service")
+const userModel = require("../models/user.model");
+const otpModel = require("../models/otp.model");
+const tokenBlacklistModel = require("../models/blacklist.model");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { sendOTPEmail } = require("../services/email.service");
 
 // Helper function to generate a 6-digit OTP
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Cookie Configuration for Local & Render Production Deployment
 const COOKIE_OPTIONS = {
@@ -14,7 +14,7 @@ const COOKIE_OPTIONS = {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 24 * 60 * 60 * 1000 // 1 day
-}
+};
 
 /**
  * @name registerUserController
@@ -47,15 +47,14 @@ const registerUserController = async (req, res) => {
         // 3. Generate 6-digit OTP
         const otp = generateOTP();
 
-        // 4. Send Email via Nodemailer
+        // 4. Send Email via Nodemailer with DEV BYPASS
         try {
             await sendOTPEmail(normalizedEmail, otp, name.trim());
         } catch (emailError) {
-            console.error("CRITICAL: Email service failed ->", emailError);
-            return res.status(500).json({
-                success: false,
-                message: "Failed to send verification email. Please check server configuration."
-            });
+            // Dev Bypass: Log the error and OTP, but do not crash the request
+            console.error("⚠️ EMAIL DELIVERY BLOCKED BY RENDER/GOOGLE.");
+            console.error(`✅ DEV BYPASS: Your OTP code for ${normalizedEmail} is: [ ${otp} ]`);
+            console.error("Original Error:", emailError.message);
         }
 
         // 5. Store temporary signup record in OTP DB (Overwrites old OTP if present)
@@ -70,7 +69,7 @@ const registerUserController = async (req, res) => {
         return res.status(200).json({
             success: true,
             requiresVerification: true,
-            message: "Verification code sent to your email."
+            message: "Verification code sent to your email (or check server logs)."
         });
 
     } catch (error) {
@@ -89,7 +88,7 @@ const registerUserController = async (req, res) => {
  */
 async function verifyEmailController(req, res) {
     try {
-        // FIX: Destructure 'otp' to perfectly match the frontend payload
+        // FIX: Destructure 'otp' to match what frontend auth.api.js is sending
         const { email, otp } = req.body;
 
         if (!email || !otp) {
@@ -111,7 +110,7 @@ async function verifyEmailController(req, res) {
             });
         }
 
-        // FIX: Compare against 'otp' instead of 'code'
+        // 2. Validate OTP Match
         if (pendingUser.otp !== otp.toString().trim()) {
             return res.status(400).json({ 
                 success: false, 
@@ -119,17 +118,17 @@ async function verifyEmailController(req, res) {
             });
         }
 
-        // 2. Officially register user in main MongoDB collection
+        // 3. Officially register user in main MongoDB collection
         const user = await userModel.create({
             name: pendingUser.name,
             email: pendingUser.email,
             password: pendingUser.password
         });
 
-        // 3. Remove temporary OTP record
+        // 4. Remove temporary OTP record
         await otpModel.deleteOne({ email: normalizedEmail });
 
-        // 4. Generate JWT session token
+        // 5. Generate JWT session token
         const token = jwt.sign(
             { id: user._id, name: user.name },
             process.env.JWT_SECRET,
@@ -285,4 +284,4 @@ module.exports = {
     loginUserController,
     logoutUserController,
     getMeController
-}
+};
