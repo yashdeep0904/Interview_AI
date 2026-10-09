@@ -1,51 +1,43 @@
 import axios from "axios";
 
-// Base API Configuration
+// Properly prioritizes the environment variable over the fallback Render URL
 const API = axios.create({
-    baseURL: "https://interview-ai-server-a5fr.onrender.com/api" || "https://localhost:5173",
-    withCredentials: true, // Enables cookie handling for auth sessions
+    baseURL: import.meta.env.VITE_API_URL 
+        ? `${import.meta.env.VITE_API_URL}/api` 
+        : "https://interview-ai-server-a5fr.onrender.com/api" || "https://localhost:5173",
+    withCredentials: true,
     headers: {
         "Content-Type": "application/json"
     }
 });
 
-// 1. Register User API
 export const register = async (formData) => {
     try {
         const response = await API.post("/auth/register", formData);
         return response.data;
     } catch (error) {
-        throw new Error(
-            error.response?.data?.message || "Server error during registration."
-        );
+        throw new Error(error.response?.data?.message || "Server error during registration.");
     }
 };
 
-// 2. Verify Email OTP API
 export const verifyEmail = async ({ email, code }) => {
     try {
         const response = await API.post("/auth/verify-otp", { email, otp: code });
         return response.data;
     } catch (error) {
-        throw new Error(
-            error.response?.data?.message || "Invalid or expired verification code."
-        );
+        throw new Error(error.response?.data?.message || "Invalid or expired verification code.");
     }
 };
 
-// 3. Login API
 export const login = async (credentials) => {
     try {
         const response = await API.post("/auth/login", credentials);
         return response.data;
     } catch (error) {
-        throw new Error(
-            error.response?.data?.message || "Invalid email or password."
-        );
+        throw new Error(error.response?.data?.message || "Invalid email or password.");
     }
 };
 
-// 4. Get Current Auth User
 export const getMe = async () => {
     try {
         const response = await API.get("/auth/get-me");
@@ -55,7 +47,6 @@ export const getMe = async () => {
     }
 };
 
-// 5. Logout API
 export const logout = async () => {
     try {
         const response = await API.post("/auth/logout");

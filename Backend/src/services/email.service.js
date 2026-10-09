@@ -1,25 +1,33 @@
 const nodemailer = require("nodemailer");
 
-// Create standard Gmail transporter with TLS fallback for cloud deployments
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false // Prevents cloud proxy SSL handshake failures
-    }
-});
+/**
+ * Creates a Gmail SMTP transporter with socket timeouts to prevent 502 server hangs
+ */
+const createTransporter = () => {
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        tls: {
+            rejectUnauthorized: false // Prevents proxy SSL handshake failures on Render
+        },
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+    });
+};
 
 /**
- * Sends OTP Verification email to user
+ * Sends OTP verification email
  */
 async function sendOTPEmail(toEmail, otp, name) {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.error("SERVER ERROR: EMAIL_USER or EMAIL_PASS environment variables are missing!");
-        throw new Error("Server missing email credentials.");
+        throw new Error("EMAIL_USER or EMAIL_PASS environment variables are missing on server.");
     }
+
+    const transporter = createTransporter();
 
     const mailOptions = {
         from: `"HiredMind" <${process.env.EMAIL_USER}>`,
@@ -35,19 +43,12 @@ async function sendOTPEmail(toEmail, otp, name) {
                     <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #10b981;">${otp}</span>
                 </div>
                 
-                <p style="color: #64748b; font-size: 13px;">This code will expire in 10 minutes. If you did not create an account, you can safely ignore this message.</p>
+                <p style="color: #64748b; font-size: 13px;">This code will expire in 10 minutes.</p>
             </div>
         `
     };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Email successfully sent to ${toEmail}: ${info.messageId}`);
-        return info;
-    } catch (error) {
-        console.error("Nodemailer execution error:", error);
-        throw error;
-    }
+    return await transporter.sendMail(mailOptions);
 }
 
 module.exports = { sendOTPEmail };

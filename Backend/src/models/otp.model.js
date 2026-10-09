@@ -10,7 +10,7 @@ const otpSchema = new mongoose.Schema(
         },
         otp: {
             type: String,
-            required: [true, "OTP code is required"]
+            required: [true, "OTP is required"]
         },
         name: {
             type: String,
@@ -24,7 +24,7 @@ const otpSchema = new mongoose.Schema(
         createdAt: {
             type: Date,
             default: Date.now,
-            expires: 600 // Auto-deletes document from MongoDB after 10 minutes
+            expires: 600 // Auto-deletes document after 10 minutes
         }
     },
     { timestamps: true }

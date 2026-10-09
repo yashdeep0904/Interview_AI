@@ -89,9 +89,10 @@ const registerUserController = async (req, res) => {
  */
 async function verifyEmailController(req, res) {
     try {
-        const { email, code } = req.body;
+        // FIX: Destructure 'otp' to perfectly match the frontend payload
+        const { email, otp } = req.body;
 
-        if (!email || !code) {
+        if (!email || !otp) {
             return res.status(400).json({ 
                 success: false, 
                 message: "Email and verification code are required" 
@@ -110,7 +111,8 @@ async function verifyEmailController(req, res) {
             });
         }
 
-        if (pendingUser.otp !== code.toString().trim()) {
+        // FIX: Compare against 'otp' instead of 'code'
+        if (pendingUser.otp !== otp.toString().trim()) {
             return res.status(400).json({ 
                 success: false, 
                 message: "Invalid verification code" 

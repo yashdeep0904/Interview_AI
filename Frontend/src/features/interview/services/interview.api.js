@@ -1,59 +1,40 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000",
+    baseURL: import.meta.env.VITE_API_URL || "https://interview-ai-server-a5fr.onrender.com" || "https://localhost:5173",
     withCredentials: true,
-})
+});
 
-
-/**
- * @description Service to generate interview report based on user self description, resume and job description.
- */
 export const generateInterviewReport = async ({ jobDescription, selfDescription, resumeFile }) => {
+    const formData = new FormData();
+    formData.append("jobDescription", jobDescription);
+    formData.append("selfDescription", selfDescription);
+    formData.append("resume", resumeFile);
 
-    const formData = new FormData()
-    formData.append("jobDescription", jobDescription)
-    formData.append("selfDescription", selfDescription)
-    formData.append("resume", resumeFile)
-
-    const response = await api.post("/api/interview/", formData, {
+    const response = await api.post("/api/interview/generate", formData, {
         headers: {
             "Content-Type": "multipart/form-data"
         }
-    })
+    });
 
-    return response.data
+    return response.data;
+};
 
-}
-
-
-/**
- * @description Service to get interview report by interviewId.
- */
 export const getInterviewReportById = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}`)
+    const response = await api.get(`/api/interview/report/${interviewId}`);
+    return response.data;
+};
 
-    return response.data
-}
-
-
-/**
- * @description Service to get all interview reports of logged in user.
- */
 export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview/")
+    const response = await api.get("/api/interview/reports");
+    return response.data;
+};
 
-    return response.data
-}
-
-
-/**
- * @description Service to generate resume pdf based on user self description, resume content and job description.
- */
 export const generateResumePdf = async ({ interviewReportId }) => {
-    const response = await api.post(`/api/interview/resume/pdf/${interviewReportId}`, null, {
+    // Note: Changed from POST to GET to match backend PDF download route
+    const response = await api.get(`/api/interview/resume/${interviewReportId}/download`, {
         responseType: "blob"
-    })
+    });
 
-    return response.data
-}
+    return response.data;
+};

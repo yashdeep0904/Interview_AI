@@ -1,13 +1,28 @@
-const { Router } = require('express')
-const authController = require("../controllers/auth.controller")
-const authMiddleware = require("../middlewares/auth.middleware")
+const express = require("express");
+const router = express.Router();
 
-const authRouter = Router()
+// 1. Import Controllers
+const {
+    registerUserController,
+    verifyEmailController,
+    loginUserController,
+    logoutUserController,
+    getMeController
+} = require("../controllers/auth.controller");
 
-authRouter.post("/register", authController.registerUserController)
-authRouter.post("/verify-email", authController.verifyEmailController) // New OTP route
-authRouter.post("/login", authController.loginUserController)
-authRouter.get("/logout", authController.logoutUserController)
-authRouter.get("/get-me", authMiddleware.authUser, authController.getMeController)
+// 2. Import Middleware safely (handles both default & named exports)
+const rawAuthMiddleware = require("../middlewares/auth.middleware");
+const authMiddleware = typeof rawAuthMiddleware === "function" 
+    ? rawAuthMiddleware 
+    : (rawAuthMiddleware.authMiddleware || rawAuthMiddleware.protect);
 
-module.exports = authRouter
+// 3. Define Auth Routes
+router.post("/register", registerUserController);
+router.post("/verify-otp", verifyEmailController);
+router.post("/login", loginUserController);
+router.post("/logout", logoutUserController);
+
+// 4. Protected Route
+router.get("/get-me", authMiddleware, getMeController);
+
+module.exports = router;

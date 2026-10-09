@@ -1,12 +1,7 @@
-const multer = require("multer")
+const multer = require("multer");
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 3MB
-    }
-})
-
-
-module.exports = upload
+// Export the single file middleware function
+module.exports = upload.single("resume");
