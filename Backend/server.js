@@ -23,6 +23,10 @@ app.use(cors({
     credentials: true
 }))
 
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+  }
+
 // 3. API Routes
 app.use("/api/auth", authRouter)
 app.use("/api/interview", interviewRouter)
