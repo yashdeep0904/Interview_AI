@@ -5,12 +5,13 @@ import { InterviewProvider } from "./features/interview/interview.context.jsx"
 
 // Auth Pages & Components
 import Login from "./features/auth/pages/Login"
-import Register from "./features/auth/pages/Register"
+import Register from "./features/auth/pages/Register.jsx"
 import Protected from "./features/auth/components/Protected"
 
 // Interview Pages
 import Home from "./features/interview/pages/Home"
 import Interview from "./features/interview/pages/Interview"
+
 
 const router = createBrowserRouter([
     {
