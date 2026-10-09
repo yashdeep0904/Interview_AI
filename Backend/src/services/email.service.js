@@ -1,21 +1,24 @@
 const nodemailer = require("nodemailer");
 
 /**
- * Creates a Gmail SMTP transporter with socket timeouts to prevent 502 server hangs
+ * Creates a Gmail SMTP transporter explicitly configured to bypass cloud network blocks
  */
 const createTransporter = () => {
     return nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465, // Explicitly force SSL port 465 instead of relying on 'service' defaults
+        secure: true,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
         },
         tls: {
-            rejectUnauthorized: false // Prevents proxy SSL handshake failures on Render
+            rejectUnauthorized: false // Prevents Render SSL proxy handshake failures
         },
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000,
-        socketTimeout: 10000
+        // Increased timeouts to 20 seconds for Render's slow free-tier cold starts
+        connectionTimeout: 20000, 
+        greetingTimeout: 20000,
+        socketTimeout: 20000
     });
 };
 
