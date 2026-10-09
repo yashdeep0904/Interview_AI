@@ -19,11 +19,12 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "ls": "^1.0.0",
     "mongoose": "^9.2.1",
     "multer": "^2.0.2",
     "nodemailer": "^10.0.16",
     "pdf-parse": "^2.4.5",
-    "puppeteer": "^24.37.5",
+    "puppeteer": "^25.13.0",
     "scripts": "^0.1.0",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.1"
