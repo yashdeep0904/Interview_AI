@@ -3,7 +3,8 @@ const otpModel = require("../models/otp.model");
 const tokenBlacklistModel = require("../models/blacklist.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { sendOTPEmail } = require("../services/email.service");
+const { default: sendEmail } = require("../services/email.service");
+
 
 // Helper function to generate a 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -49,7 +50,7 @@ const registerUserController = async (req, res) => {
 
         // 4. Send Email via Nodemailer
         try {
-            await sendOTPEmail(normalizedEmail, otp, name.trim());
+            await sendEmail(normalizedEmail, otp, name.trim());
         } catch (emailError) {
             console.error("Email Delivery Failed:", emailError.message);
             console.error("⚠️ RENDER BLOCKED EMAIL DELIVERY.");
