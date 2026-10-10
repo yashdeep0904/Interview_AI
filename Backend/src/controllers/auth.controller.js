@@ -12,7 +12,7 @@ const COOKIE_OPTIONS = {
 
 /**
  * @name registerUserController
- * @description Creates a new user account and issues JWT cookie
+ * @description Creates a new user account directly and issues JWT cookie
  * @access Public
  */
 const registerUserController = async (req, res) => {
@@ -36,6 +36,7 @@ const registerUserController = async (req, res) => {
             });
         }
 
+        // Create the user. The password will be hashed automatically by the user.model.js hook
         const user = await userModel.create({
             name: name.trim(),
             email: normalizedEmail,
@@ -64,7 +65,7 @@ const registerUserController = async (req, res) => {
         console.error("Register Controller Error:", error);
         return res.status(500).json({ 
             success: false, 
-            message: error.message || "Internal server error during registration." 
+            message: "Internal server error during registration." 
         });
     }
 };
