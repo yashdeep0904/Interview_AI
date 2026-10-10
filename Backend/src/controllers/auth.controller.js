@@ -65,7 +65,8 @@ const registerUserController = async (req, res) => {
         console.error("Register Controller Error:", error);
         return res.status(500).json({ 
             success: false, 
-            message: "Internal server error during registration." 
+            // THIS WILL NOW SHOW THE EXACT ERROR ON YOUR SCREEN
+            message: `Server Error: ${error.message}` 
         });
     }
 };
