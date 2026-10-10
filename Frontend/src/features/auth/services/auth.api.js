@@ -1,10 +1,9 @@
 import axios from "axios";
 
-// Properly prioritizes the environment variable over the fallback Render URL
 const API = axios.create({
     baseURL: import.meta.env.VITE_API_URL 
         ? `${import.meta.env.VITE_API_URL}/api` 
-        : "https://interview-ai-server-a5fr.onrender.com/api" || "https://localhost:5173",
+        : "https://interview-ai-server-a5fr.onrender.com/api",
     withCredentials: true,
     headers: {
         "Content-Type": "application/json"
@@ -17,15 +16,6 @@ export const register = async (formData) => {
         return response.data;
     } catch (error) {
         throw new Error(error.response?.data?.message || "Server error during registration.");
-    }
-};
-
-export const verifyEmail = async ({ email, code }) => {
-    try {
-        const response = await API.post("/auth/verify-otp", { email, otp: code });
-        return response.data;
-    } catch (error) {
-        throw new Error(error.response?.data?.message || "Invalid or expired verification code.");
     }
 };
 
